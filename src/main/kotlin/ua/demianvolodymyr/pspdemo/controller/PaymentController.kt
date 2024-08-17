@@ -46,20 +46,24 @@ class PaymentController(
     }
 
     suspend fun add(req: ServerRequest): ServerResponse {
-        val receivedPaymentRequest = req.awaitBodyOrNull(PaymentRequestDto::class)!!.toEntity()
+        try {
+            val receivedPaymentRequest = req.awaitBodyOrNull(PaymentRequestDto::class)!!.toEntity()
 
-        return receivedPaymentRequest?.let {
-            val trxId = paymentService.processPayment(receivedPaymentRequest)
-            receivedPaymentRequest.merchantId = trxId
-            ServerResponse
-                .ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValueAndAwait(
-                    paymentRequestRepository
-                        .save(receivedPaymentRequest)
-                        .toDto()
-                )
-        } ?: ServerResponse.badRequest().bodyValueAndAwait(mapOf("message" to "Error", "success" to false))
+            return receivedPaymentRequest?.let {
+                val trxId = paymentService.processPayment(receivedPaymentRequest)
+                receivedPaymentRequest.merchantId = trxId
+                ServerResponse
+                    .ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValueAndAwait(
+                        paymentRequestRepository
+                            .save(receivedPaymentRequest)
+                            .toDto()
+                    )
+            } ?: ServerResponse.badRequest().bodyValueAndAwait(mapOf("message" to "Error", "success" to false))
+        }catch (e:Exception){
+            return ServerResponse.badRequest().bodyValueAndAwait(mapOf("message" to e.message, "success" to false))
+        }
     }
 
     suspend fun add2(req: ServerRequest): ServerResponse {
