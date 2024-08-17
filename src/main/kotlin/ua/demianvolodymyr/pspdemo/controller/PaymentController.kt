@@ -49,7 +49,7 @@ class PaymentController(
         try {
             val receivedPaymentRequest = req.awaitBodyOrNull(PaymentRequestDto::class)!!.toEntity()
 
-            return receivedPaymentRequest?.let {
+            return receivedPaymentRequest.let {
                 val trxId = paymentService.processPayment(receivedPaymentRequest)
                 receivedPaymentRequest.merchantId = trxId
                 ServerResponse
@@ -60,8 +60,8 @@ class PaymentController(
                             .save(receivedPaymentRequest)
                             .toDto()
                     )
-            } ?: ServerResponse.badRequest().bodyValueAndAwait(mapOf("message" to "Error", "success" to false))
-        }catch (e:Exception){
+            }
+        } catch (e: Exception) {
             return ServerResponse.badRequest().bodyValueAndAwait(mapOf("message" to e.message, "success" to false))
         }
     }
