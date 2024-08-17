@@ -1,0 +1,13 @@
+spring:
+  r2dbc:
+    username: sa
+    password:
+    url: r2dbc:h2:mem:///~/db/testdb
+#  profiles:
+#    include:
+#      - "logging"
+#logging:
+#  level:
+#    root: INFO
+#  file:
+#    name: logs/application.log
