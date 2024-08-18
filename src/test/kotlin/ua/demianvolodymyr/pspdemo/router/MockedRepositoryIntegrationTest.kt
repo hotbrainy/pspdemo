@@ -5,8 +5,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.slot
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
@@ -23,7 +21,6 @@ import ua.demianvolodymyr.pspdemo.model.*
 import ua.demianvolodymyr.pspdemo.repository.PaymentRequestRepository
 import ua.demianvolodymyr.pspdemo.repository.TransactionRepository
 import ua.demianvolodymyr.pspdemo.services.PaymentService
-import ua.demianvolodymyr.pspdemo.util.PaymentValidator
 
 @WebFluxTest
 @AutoConfigureWebTestClient
@@ -46,7 +43,7 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         cvv: String = "543",
         cardNumber: String = "4242424242424242",
         expiryDate: String = "07/33",
-        merchantId: String = "",
+        merchantId: String = "45723456",
         amount: Double = 20.0,
         currency: String = "USD"
     ) = PaymentRequest(
@@ -62,9 +59,9 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         cvv: String = "043",
         cardNumber: String = "5293663535991228",
         expiryDate: String = "10/31",
-        merchantId: String = "",
         amount: Double = 10.0,
-        currency: String = "USD"
+        currency: String = "USD",
+        merchantId: String = "87682352"
     ) = aPaymentRequest(
         cvv = cvv,
         cardNumber = cardNumber,
@@ -75,6 +72,21 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
     )
 
 
+    private fun wrongPaymentRequest(
+        cardNumber: String = "",
+        cvv: String = "043",
+        expiryDate: String = "01/00",
+        merchantId: String = "56874356",
+        amount: Double = 10.0,
+        currency: String = "USD"
+    ) = aPaymentRequest(
+        cvv = cvv,
+        cardNumber = cardNumber,
+        expiryDate = expiryDate,
+        merchantId = merchantId,
+        amount = amount,
+        currency = currency
+    )
     @Test
     fun `Retrieve all payment-request`() {
         every { repository.findAll() } returns flow {
@@ -88,12 +100,6 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
     }
 
 
-//    @AfterEach
-//    fun afterEach() {
-//        runBlocking {
-//            repository.deleteAll()
-//        }
-//    }
 
     @Test
     fun `Retrieve PaymentRequest by existing id`() {
@@ -151,8 +157,40 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
             .exchange()
             .expectStatus()
             .isOk
-            .expectBody<PaymentRequestDto>()
-            .isEqualTo(aPaymentRequest().toDto())
+            .expectBody<String>()
+    }
+
+    @Test
+    fun `Add a new wrong PaymentRequest`() {
+
+        val savedPaymentRequest = slot<PaymentRequest>()
+        val trx = slot<Transaction>()
+        coEvery {
+            repository.save(capture(savedPaymentRequest))
+        } coAnswers {
+            savedPaymentRequest.captured
+        }
+
+        coEvery {
+            paymentService.processPayment(any())
+        } coAnswers {
+            throw Exception("Invalid Card Number")
+        }
+
+        coEvery {
+            trxRepository.save(capture(trx))
+        } coAnswers {
+            trx.captured
+        }
+        client
+            .post()
+            .uri("/api/payment-request")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(wrongPaymentRequest().toDto())
+            .exchange()
+            .expectStatus()
+            .isBadRequest
     }
 
     @Test

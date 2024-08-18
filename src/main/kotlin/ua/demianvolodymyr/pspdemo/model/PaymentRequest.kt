@@ -19,5 +19,6 @@ fun PaymentRequest.toDto(): PaymentRequestDto = PaymentRequestDto(
     expiryDate = expiryDate,
     cvv = cvv,
     amount = amount,
-    currency = currency
+    currency = currency,
+    merchantId = merchantId
 )

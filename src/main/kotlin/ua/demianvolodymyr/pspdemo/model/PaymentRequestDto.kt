@@ -5,7 +5,8 @@ data class PaymentRequestDto(
     val expiryDate: String,
     val cvv: String,
     val amount: Double,
-    val currency: String
+    val currency: String,
+    val merchantId: String
 )
 
 fun PaymentRequestDto.toEntity(): PaymentRequest = PaymentRequest(
@@ -14,5 +15,5 @@ fun PaymentRequestDto.toEntity(): PaymentRequest = PaymentRequest(
     cvv = cvv,
     amount = amount,
     currency = currency,
-    merchantId = ""
+    merchantId = merchantId
 )
