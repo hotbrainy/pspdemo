@@ -35,7 +35,7 @@ class PaymentService(
      *
      * @return A unique transaction ID for the processed payment.
      */
-    suspend fun processPayment(request: PaymentRequest): String {
+    suspend fun processPayment(request: PaymentRequest): Transaction {
         try {
             paymentValidator.validatePaymentRequest(request)
             val acquirer = selectAcquirer(request.cardNumber.take(6))
@@ -43,8 +43,16 @@ class PaymentService(
 
             val status = if (finalStatus == TransactionStatus.APPROVED) "Approved" else "Denied"
             val transactionId = UUID.randomUUID().toString()
-            transactionRepository.save(Transaction(null, request.cardNumber, status, transactionId))
-            return transactionId
+            val trx = Transaction(
+                null,
+                request.cardNumber,
+                request.amount,
+                request.currency,
+                status,
+                transactionId
+            )
+            transactionRepository.save(trx)
+            return trx
         } catch (e: Exception) {
             throw e
         }

@@ -90,16 +90,16 @@ class PaymentController(
             val receivedPaymentRequest = req.awaitBodyOrNull(PaymentRequestDto::class)!!.toEntity()
 
             // Process the payment and get a transaction ID.
-            val trxId = paymentService.processPayment(receivedPaymentRequest)
+            val trx: Transaction = paymentService.processPayment(receivedPaymentRequest)
             return receivedPaymentRequest.let {
                 paymentRequestRepository
-                            .save(receivedPaymentRequest)
-                            .toDto()
+                    .save(receivedPaymentRequest)
+                    .toDto()
                 ServerResponse
                     .ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValueAndAwait(
-                        trxId
+                        trx
                     )
             }
         } catch (e: Exception) {

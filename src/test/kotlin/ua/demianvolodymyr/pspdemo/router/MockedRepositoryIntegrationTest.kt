@@ -28,7 +28,7 @@ import ua.demianvolodymyr.pspdemo.services.PaymentService
 class MockedRepositoryIntegrationTest @Autowired constructor(
     @Autowired private val client: WebTestClient,
 
-) {
+    ) {
     @MockkBean
     private lateinit var repository: PaymentRequestRepository
 
@@ -87,6 +87,7 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         amount = amount,
         currency = currency
     )
+
     @Test
     fun `Retrieve all payment-request`() {
         every { repository.findAll() } returns flow {
@@ -95,10 +96,8 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         }
 
         client.get().uri("/api/payment-request").exchange().expectStatus().isOk.expectBodyList<PaymentRequestDto>()
-            .hasSize(2)
-            .contains(aPaymentRequest().toDto(), anotherPaymentRequest().toDto())
+            .hasSize(2).contains(aPaymentRequest().toDto(), anotherPaymentRequest().toDto())
     }
-
 
 
     @Test
@@ -109,13 +108,7 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         } coAnswers {
             aPaymentRequest()
         }
-        client
-            .get()
-            .uri("/api/payment-request/0")
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody<PaymentRequestDto>()
+        client.get().uri("/api/payment-request/0").exchange().expectStatus().isOk.expectBody<PaymentRequestDto>()
             .isEqualTo(aPaymentRequest().toDto())
     }
 
@@ -138,9 +131,9 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         }
 
         coEvery {
-            paymentService.processPayment(any())
+            paymentService.processPayment(capture(savedPaymentRequest))
         } coAnswers {
-            ""
+            Transaction(null, "4242424242424242", 20.0, "USD", "Approved", "")
         }
 
         coEvery {
@@ -148,16 +141,9 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         } coAnswers {
             trx.captured
         }
-        client
-            .post()
-            .uri("/api/payment-request")
-            .accept(MediaType.APPLICATION_JSON)
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(aPaymentRequest().toDto())
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody<String>()
+        client.post().uri("/api/payment-request").accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON).bodyValue(aPaymentRequest().toDto()).exchange()
+            .expectStatus().isOk.expectBody<String>()
     }
 
     @Test
@@ -182,15 +168,9 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         } coAnswers {
             trx.captured
         }
-        client
-            .post()
-            .uri("/api/payment-request")
-            .accept(MediaType.APPLICATION_JSON)
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(wrongPaymentRequest().toDto())
-            .exchange()
-            .expectStatus()
-            .isBadRequest
+        client.post().uri("/api/payment-request").accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON).bodyValue(wrongPaymentRequest().toDto()).exchange()
+            .expectStatus().isBadRequest
     }
 
     @Test
@@ -205,15 +185,8 @@ class MockedRepositoryIntegrationTest @Autowired constructor(
         }
 
 
-        client
-            .post()
-            .uri("/api/payment-request")
-            .accept(MediaType.APPLICATION_JSON)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(fromValue("{}"))
-            .exchange()
-            .expectStatus()
-            .isBadRequest
+        client.post().uri("/api/payment-request").accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON).body(fromValue("{}")).exchange().expectStatus().isBadRequest
     }
 
 }
